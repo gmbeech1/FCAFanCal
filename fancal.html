@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fantasy Calendar (Portable)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Quicksand:wght@400;600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Poppins', 'Quicksand', 'Nunito', Arial, Helvetica, sans-serif; /* Use rounded sans-serif fonts */
+      background: #121212; /* Dark background */
+      color: #e0e0e0; /* Light text */
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* Full viewport height */
+    }
+    h1, h2 {
+      text-align: center;
+      color: #ffffff; /* White headings */
+      font-family: 'Poppins', 'Quicksand', 'Nunito', Arial, Helvetica, sans-serif; /* Use rounded sans-serif fonts */
+    }
+    textarea, button, select {
+      font-family: 'Poppins', 'Quicksand', 'Nunito', Arial, Helvetica, sans-serif; /* Use rounded sans-serif fonts */
+    }
+    #controls {
+      text-align: center;
+      margin: 0;
+      position: sticky; /* Keep controls fixed at the top */
+      top: 0;
+      background: #121212; /* Match the background color */
+      z-index: 1000; /* Ensure it stays above other content */
+      padding: 10px 0;
+      border-bottom: 1px solid #444; /* Add a subtle border for separation */
+    }
+    #yearSeasonLabel {
+      margin: 0;
+      font-size: 1.5em; /* Adjust font size for better visibility */
+      color: #ffffff; /* White text for the label */
+      font-family: 'Poppins', 'Quicksand', 'Nunito', Arial, Helvetica, sans-serif; /* Rounded sans-serif font */
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr); /* Ensure 7 columns for 7 days */
+      gap: 5px; /* Space between cells */
+      justify-content: center;
+      max-width: 100%; /* Ensure it fits within the screen */
+      margin: auto;
+      border-radius: 12px; /* Rounded corners for the calendar */
+      overflow: hidden; /* Ensure content stays within rounded corners */
+      border: 1px solid #444; /* Add a border for better visibility */
+      background: #1e1e1e; /* Darker background for the calendar */
+    }
+    .day {
+      border: 1px solid #444; /* Darker border */
+      border-radius: 6px;
+      width: auto;
+      padding: 5px;
+      position: relative;
+      background: #1e1e1e; /* Darker background for days */
+      color: #e0e0e0; /* Light text */
+      text-align: center; /* Center-align text */
+      font-size: 12px; /* Adjust font size for better fit */
+    }
+    .day.hasNote {
+      border: 2px solid #ff9800; /* Highlight for days with notes */
+    }
+    .noteArea {
+      display: none;
+      margin-top: 5px;
+    }
+    .day.active .noteArea {
+      display: block;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      box-sizing: border-box;
+      font-family: 'Poppins', 'Quicksand', 'Nunito', Arial, Helvetica, sans-serif; /* Use rounded sans-serif fonts */
+      background: #333; /* Darker background for textarea */
+      color: #e0e0e0; /* Light text */
+      border: 1px solid #555; /* Darker border */
+    }
+    button {
+      margin-top: 5px;
+      font-size: 14px;
+      padding: 8px 15px; /* Adjust padding for capsule shape */
+      background: #333; /* Darker button background */
+      color: #e0e0e0; /* Light text */
+      border: 1px solid #555; /* Darker border */
+      cursor: pointer;
+      font-family: 'Poppins', 'Quicksand', 'Nunito', Arial, Helvetica, sans-serif; /* Use rounded sans-serif fonts */
+      border-radius: 25px; /* Capsule shape */
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #444; /* Slightly lighter on hover */
+    }
+    .note-entry {
+      margin-bottom: 10px;
+    }
+    .season-0 { background-color: #37474f; }
+    .season-1 { background-color: #455a64; }
+    .season-2 { background-color: #546e7a; }
+    .season-3 { background-color: #33691e; }
+    .season-4 { background-color: #558b2f; }
+    .season-5 { background-color: #689f38; }
+    .season-6 { background-color: #f9a825; }
+    .season-7 { background-color: #fbc02d; }
+    .season-8 { background-color: #fdd835; }
+    .season-9 { background-color: #ff7043; }
+    .season-10 { background-color: #ff5722; }
+    .season-11 { background-color: #5e35b1; }
+    #miniCalendar table {
+      border: 1px solid #444;
+      background: #1e1e1e;
+      border-radius: 8px; /* Rounded corners for the mini-calendar */
+      overflow: hidden;
+    }
+    #miniCalendar th, #miniCalendar td {
+      border: 1px solid #444;
+      padding: 5px;
+      text-align: center;
+      cursor: pointer;
+      color: #e0e0e0;
+      font-family: 'Poppins', 'Quicksand', 'Nunito', Arial, Helvetica, sans-serif; /* Use rounded sans-serif fonts */
+    }
+    #miniCalendar td:hover {
+      background: #333;
+    }
+    #miniCalendar td.disabled {
+      color: #777;
+      cursor: not-allowed;
+    }
+    #miniCalendar td.selected {
+      background: #ff9800;
+      color: #121212;
+    }
+    /* Style for rows of buttons (segmented capsules) */
+    #controls button {
+      border-radius: 0; /* Remove all rounding */
+      margin: 0; /* Remove margin between buttons */
+      border-left: none; /* Remove left border for inner buttons */
+    }
+    #controls button:first-child {
+      margin-left: 0; /* Remove extra spacing for the first button */
+    }
+    #controls button:last-child {
+      margin-right: 0; /* Remove extra spacing for the last button */
+      border-left: 1px solid #555; /* Ensure the last button has a left border */
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      color: #e0e0e0;
+      font-size: 16px; /* Adjust size for the pictogram */
+      cursor: pointer;
+      padding: 5px;
+      margin: 0 2px;
+      transition: color 0.3s ease;
+    }
+
+    .icon-btn:hover {
+      color: #ff9800; /* Highlight color on hover */
+    }
+
+    .icon-btn:focus {
+      outline: none;
+    }
+
+    /* Removed empty ruleset for #backToCalendarBtn */
+
+    /* Removed empty ruleset for #viewAllNotesBtn */
+
+    /* Round the left side of "View All Notes" and "Back to Calendar" buttons */
+    #viewAllNotesBtn, #backToCalendarBtn {
+      border-radius: 25px 0 0 25px; /* Rounded left side */
+    }
+
+    /* Round the right side of "Clear All Notes" button */
+    #clearAllNotesBtn {
+      border-radius: 0 25px 25px 0; /* Rounded right side */
+    }
+
+    /* Round both ends of the navigation bar */
+    #navigationButtons button:first-child {
+      border-radius: 25px 0 0 25px; /* Rounded left side */
+    }
+
+    #navigationButtons button:last-child {
+      border-radius: 0 25px 25px 0; /* Rounded right side */
+    }
+
+    /* Style navigation buttons to look like arrows */
+    #navigationButtons button {
+      background: #333; /* Darker button background */
+      color: #e0e0e0; /* Light text */
+      border: 1px solid #555; /* Darker border */
+      cursor: pointer;
+      font-size: 14px;
+      padding: 10px 15px; /* Adjust padding for arrow-like shape */
+      position: relative; /* For pseudo-elements */
+      transition: background 0.3s ease;
+    }
+
+    #navigationButtons button:hover {
+      background: #444; /* Slightly lighter on hover */
+    }
+
+    /* Add arrow-like shapes using pseudo-elements */
+    #navigationButtons button:first-child::before,
+    #navigationButtons button:last-child::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-style: solid;
+    }
+
+    #navigationButtons button:first-child::before {
+      left: -10px;
+      border-width: 10px 10px 10px 0;
+      border-color: transparent #333 transparent transparent;
+    }
+
+    #navigationButtons button:last-child::after {
+      right: -10px;
+      border-width: 10px 0 10px 10px;
+      border-color: transparent transparent transparent #333;
+    }
+
+    /* General styles for mobile devices */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      h1, h2 {
+        font-size: 1.5em; /* Adjust font size for smaller screens */
+      }
+
+      #controls {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* Add spacing between buttons */
+      }
+
+      #controls button {
+        width: 100%; /* Make buttons full-width */
+        margin: 5px 0; /* Add vertical spacing */
+      }
+
+      .calendar {
+        grid-template-columns: repeat(2, 1fr); /* Show 2 days per row */
+        gap: 10px; /* Increase spacing between days */
+      }
+
+      .day {
+        width: auto; /* Allow days to resize */
+        padding: 10px; /* Add padding for better touch interaction */
+      }
+
+      #notePopup {
+        width: 95%; /* Make the popup fit smaller screens */
+        max-width: 350px; /* Limit the maximum width */
+      }
+    }
+
+    /* Landscape view for mobile devices */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .calendar {
+        grid-template-columns: repeat(4, 1fr); /* Show 4 days per row */
+      }
+
+      #controls {
+        flex-direction: row; /* Arrange buttons horizontally */
+        justify-content: center; /* Center the buttons */
+      }
+
+      #controls button {
+        width: auto; /* Allow buttons to resize */
+        margin: 0 5px; /* Add horizontal spacing */
+      }
+    }
+
+    /* Portrait view for mobile devices */
+    @media (max-width: 768px) and (orientation: portrait) {
+      .calendar {
+        grid-template-columns: repeat(7, 1fr); /* 7 columns for 7 days of the week */
+        gap: 2px; /* Reduce spacing between days for a compact layout */
+        max-width: 100%; /* Ensure it fits within the screen */
+        margin: auto; /* Center the calendar */
+      }
+
+      .day {
+        width: auto; /* Allow days to resize dynamically */
+        padding: 5px 2px; /* Reduce padding for better fit */
+        font-size: 10px; /* Adjust font size for smaller screens */
+        text-align: center; /* Center-align text for a calendar-like appearance */
+      }
+
+      h1, h2 {
+        font-size: 1.2em; /* Adjust font size for smaller screens */
+      }
+
+      #controls {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* Add spacing between buttons */
+      }
+
+      #controls button {
+        width: 100%; /* Make buttons full-width */
+        margin: 5px 0; /* Add vertical spacing */
+      }
+
+      #navigationButtons {
+        display: flex; /* Arrange buttons in a single row */
+        justify-content: space-between; /* Distribute buttons evenly */
+        gap: 5px; /* Add spacing between buttons */
+      }
+
+      #navigationButtons button {
+        flex: 1; /* Make buttons take equal space */
+        padding: 8px 5px; /* Adjust padding for smaller buttons */
+        font-size: 12px; /* Reduce font size for better fit */
+      }
+
+      #actionButtons {
+        display: flex; /* Arrange buttons in a single row */
+        flex-wrap: wrap; /* Allow wrapping if needed */
+        justify-content: space-between; /* Distribute buttons evenly */
+        gap: 5px; /* Add spacing between buttons */
+      }
+
+      #actionButtons button {
+        flex: 1; /* Make buttons take equal space */
+        padding: 8px 5px; /* Adjust padding for smaller buttons */
+        font-size: 12px; /* Reduce font size for better fit */
+      }
+    }
+
+    .day-labels {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr); /* Ensure 7 columns for day labels */
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #e0e0e0;
+      background: #121212; /* Match the background color */
+      padding: 5px 0;
+      border-bottom: 1px solid #444; /* Add a subtle border for separation */
+    }
+  </style>
+</head>
+<body>
+
+<h1>Fantasy Calendar</h1>
+
+<div id="controls">
+  <h2 id="yearSeasonLabel">Year <span id="yearDisplay">1</span></h2>
+  
+  <!-- Row 1: Other Buttons -->
+  <div id="actionButtons" style="margin-bottom: 10px;">
+    <button id="viewAllNotesBtn" onclick="viewAllNotes()">View All Notes</button>
+    <button id="backToCalendarBtn" onclick="hideNotes()" style="display: none;">Back to Calendar</button>
+    <button onclick="exportCalendar()">Save Calendar File</button>
+    <button onclick="loadCalendar()">Load Calendar</button>
+    <button id="clearAllNotesBtn" onclick="clearAllNotes()">Clear All Notes</button>
+  </div>
+
+  <!-- Row 2: Navigation Buttons -->
+  <div id="navigationButtons">
+    <button onclick="previousYear()">Previous Year</button>
+    <button onclick="previousSeason()">Previous Season</button>
+    <button onclick="nextSeason()">Next Season</button>
+    <button onclick="nextYear()">Next Year</button>
+  </div>
+
+  <!-- Day Labels -->
+  <div class="day-labels"></div>
+</div>
+
+<div style="margin-top: 15px; text-align: center;">
+    <label for="yearSelect">Jump to Year:</label>
+    <select id="yearSelect" onchange="jumpToYear()"></select>
+    <label for="dateSelect">Jump to Date:</label>
+    <select id="dateSelect" onchange="jumpToDate()"></select>
+  </div>
+
+<div id="calendarContainer">
+  <div id="calendar" class="calendar"></div>
+  <div id="notesPage" style="display:none; max-width: 800px; margin: auto;"></div>
+</div>
+
+<div id="notePopup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e1e1e; color: #e0e0e0; padding: 20px; border: 1px solid #444; border-radius: 8px; z-index: 1000; max-width: 400px; width: 90%;">
+  <div id="notePopupContent"></div>
+  <button onclick="closeNotePopup()" style="margin-top: 10px; background: #333; color: #e0e0e0; border: 1px solid #555; padding: 5px 10px; cursor: pointer;">Close</button>
+</div>
+<div id="overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 999;"></div>
+
+<script>
+  const daysOfWeek = [
+  { long: "Destill", short: "Dst" },
+  { long: "Anbor", short: "Anb" },
+  { long: "Holly", short: "Hol" },
+  { long: "Sylvan", short: "Syl" },
+  { long: "Desch", short: "Dsh" },
+  { long: "Solo", short: "Sol" },
+  { long: "Trotty", short: "Tro" }
+];
+
+function updateDayLabels() {
+  const dayLabelsDiv = document.querySelector(".day-labels");
+  const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+
+  // Clear existing labels
+  dayLabelsDiv.innerHTML = "";
+
+  // Add labels based on orientation
+  daysOfWeek.forEach(day => {
+    const label = document.createElement("div");
+    label.textContent = isPortrait ? day.short : day.long; // Use short or long name
+    dayLabelsDiv.appendChild(label);
+  });
+}
+
+// Call the function on page load and when the orientation changes
+updateDayLabels();
+window.addEventListener("resize", updateDayLabels);
+
+  const seasons = [
+    { name: "Early Winter", weeks: 5 },
+    { name: "Deep Winter", weeks: 5 },
+    { name: "Old Winter", weeks: 5 },
+    { name: "Spring Thaw", weeks: 2 },
+    { name: "Spring", weeks: 10 },
+    { name: "Late Spring", weeks: 2 },
+    { name: "Early Summer", weeks: 6 },
+    { name: "Late Summer", weeks: 6 },
+    { name: "First Harvest", weeks: 2 },
+    { name: "Dog Summer", weeks: 5 },
+    { name: "Late Harvest", weeks: 5 },
+    { name: "All Hallow’s Week", weeks: 1 }
+  ];
+  const totalDays = seasons.map(s => s.weeks * 7).reduce((a, b) => a + b, 0);
+
+  let currentYear = parseInt(localStorage.getItem("currentYear")) || 1;
+  let importPreviewData = null;
+  let currentSeasonIndex = 0; // Start with the first season
+
+  function buildCalendar() {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = ""; // Clear the calendar
+
+  const season = seasons[currentSeasonIndex]; // Get the current season
+  const seasonStartIndex = seasons
+    .slice(0, currentSeasonIndex)
+    .reduce((acc, s) => acc + s.weeks * 7, 0); // Calculate the starting day index for the season
+  const seasonDays = season.weeks * 7; // Total days in the current season
+
+  // Update the year-season label
+  document.getElementById("yearDisplay").textContent = `${currentYear}`;
+  document.getElementById("yearSeasonLabel").textContent = `Year ${currentYear} - ${season.name}`;
+
+  for (let dayIndex = seasonStartIndex; dayIndex < seasonStartIndex + seasonDays; dayIndex++) {
+    const key = `note-${currentYear}-${dayIndex}`;
+    const notes = JSON.parse(localStorage.getItem(key)) || [];
+    const hasNotes = notes.some(note => note.trim().length >= 1); // Check for valid notes
+
+    const div = document.createElement("div");
+    div.className = `day season-${currentSeasonIndex}` + (hasNotes ? " hasNote" : "");
+    div.dataset.dayIndex = dayIndex;
+
+    const dayNumber = dayIndex - seasonStartIndex + 1; // Calculate the day number within the season
+    const dayShortName = daysOfWeek[dayIndex % 7].short; // Get the short version of the day name
+
+    const header = document.createElement("div");
+    header.className = "header";
+    header.innerHTML = `<strong>${dayNumber}</strong><br>${dayShortName}`; // Display day number and short day name
+
+    const noteBtn = document.createElement("button");
+    noteBtn.innerHTML = hasNotes ? "&#128269;" : "&#43;"; // Use magnifying glass (🔍) if notes exist, "+" otherwise
+    noteBtn.title = hasNotes ? "View Notes" : "Add Note"; // Update tooltip accordingly
+    noteBtn.className = "icon-btn"; // Use the existing icon button styling
+    noteBtn.onclick = ((index) => (e) => {
+      e.stopPropagation(); // Prevent triggering the cell click event
+      const notesForDay = JSON.parse(localStorage.getItem(`note-${currentYear}-${index}`)) || [];
+      showNotePopup(index, notesForDay);
+    })(dayIndex);
+
+    div.appendChild(header);
+    div.appendChild(noteBtn);
+
+    // Add click event to the cell to view the notes
+    div.onclick = ((index) => () => {
+      const notesForDay = JSON.parse(localStorage.getItem(`note-${currentYear}-${index}`)) || [];
+      showNotePopup(index, notesForDay);
+    })(dayIndex);
+
+    calendar.appendChild(div);
+  }
+}
+
+  function saveNote(dayIndex, noteIndex) {
+    const key = `note-${currentYear}-${dayIndex}`;
+    const notes = JSON.parse(localStorage.getItem(key)) || [];
+    const textarea = document.getElementById(`note-textarea-${dayIndex}-${noteIndex}`);
+    const noteContent = textarea.value.trim();
+
+    if (noteContent.length >= 1) {
+      notes[noteIndex] = noteContent; // Update the specific note
+      localStorage.setItem(key, JSON.stringify(notes)); // Save updated notes
+    } else {
+      alert("Note content must be at least 1 character long.");
+    }
+
+    showNotePopup(dayIndex, notes); // Refresh the popup
+    buildCalendar(); // Update the calendar
+  }
+
+  function startNewYear() {
+    if (confirm("Start a new year? Previous notes will still be saved.")) {
+      currentYear++;
+      localStorage.setItem("currentYear", currentYear);
+      buildCalendar();
+    }
+  }
+
+  function previousYear() {
+    if (currentYear > 1) {
+      currentYear--;
+      localStorage.setItem("currentYear", currentYear);
+      buildCalendar();
+    } else {
+      alert("You are already at the first year.");
+    }
+  }
+
+  function nextYear() {
+    currentYear++;
+    localStorage.setItem("currentYear", currentYear);
+    buildCalendar();
+  }
+
+  function viewAllNotes() {
+  const notesDiv = document.getElementById("notesPage");
+  const calendarDiv = document.getElementById("calendar");
+  const viewAllNotesBtn = document.getElementById("viewAllNotesBtn");
+  const backToCalendarBtn = document.getElementById("backToCalendarBtn");
+
+  calendarDiv.style.display = "none"; // Hide the calendar
+  notesDiv.style.display = "block"; // Show the notes page
+  viewAllNotesBtn.style.display = "none"; // Hide the "View All Notes" button
+  backToCalendarBtn.style.display = "inline-block"; // Show the "Back to Calendar" button
+
+  notesDiv.innerHTML = `<h2>All Notes for Year ${currentYear}</h2>`;
+
+  for (let dayIndex = 0; dayIndex < totalDays; dayIndex++) {
+    const notes = JSON.parse(localStorage.getItem(`note-${currentYear}-${dayIndex}`)) || [];
+    const validNotes = notes.filter(note => note.trim().length >= 1); // Filter out blank notes
+
+    if (validNotes.length > 0) {
+      const seasonData = getSeasonData(dayIndex);
+      const entry = document.createElement("div");
+      entry.className = "note-entry";
+      entry.innerHTML = `
+        <strong>Day ${dayIndex + 1} (${daysOfWeek[dayIndex % 7].long})</strong><br>
+        ${seasonData.name}, Week ${seasonData.week}<br>
+        ${validNotes
+          .map(
+            (note, index) => `
+          <div style="margin-bottom: 10px;">
+            <p id="note-display-${dayIndex}-${index}" style="margin: 0;">${note}</p>
+            <div id="note-edit-${dayIndex}-${index}" style="display: none;">
+              <textarea id="note-textarea-${dayIndex}-${index}" style="width: 100%; height: 80px; box-sizing: border-box; background: #333; color: #e0e0e0; border: 1px solid #555;">${note}</textarea>
+              <button class="icon-btn" title="Save" onclick="saveNote(${dayIndex}, ${index})">&#128190;</button>
+              <button class="icon-btn" title="Cancel" onclick="cancelEditMode(${dayIndex}, ${index})">&#10060;</button>
+            </div>
+            <button class="icon-btn" title="Edit" onclick="enterEditMode(${dayIndex}, ${index})">&#9998;</button>
+            <button class="icon-btn" title="Delete" onclick="deleteNote(${dayIndex}, ${index})">&#128465;</button>
+          </div>
+        `
+          )
+          .join("")}
+      `;
+      notesDiv.appendChild(entry);
+    }
+  }
+}
+
+  function hideNotes() {
+  const calendarDiv = document.getElementById("calendar");
+  const notesDiv = document.getElementById("notesPage");
+  const viewAllNotesBtn = document.getElementById("viewAllNotesBtn");
+  const backToCalendarBtn = document.getElementById("backToCalendarBtn");
+
+  calendarDiv.style.display = "grid"; // Show the calendar
+  notesDiv.style.display = "none"; // Hide the notes page
+  viewAllNotesBtn.style.display = "inline-block"; // Show the "View All Notes" button
+  backToCalendarBtn.style.display = "none"; // Hide the "Back to Calendar" button
+
+  // Scroll back to the previously active day, if any
+  const activeDay = document.querySelector(".day.active");
+  if (activeDay) {
+    activeDay.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+  function getSeasonData(dayIndex) {
+    let counter = 0;
+    for (const season of seasons) {
+      const seasonDays = season.weeks * 7;
+      if (dayIndex < counter + seasonDays) {
+        const week = Math.floor((dayIndex - counter) / 7) + 1;
+        return { name: season.name, week };
+      }
+      counter += seasonDays;
+    }
+    return { name: "Unknown", week: 0 };
+  }
+
+  function exportCalendar() {
+    const data = { currentYear, notes: {} };
+    for (let y = 1; y <= currentYear; y++) {
+      for (let d = 0; d < totalDays; d++) {
+        const key = `note-${y}-${d}`;
+        const val = localStorage.getItem(key);
+        if (val) data.notes[key] = val;
+      }
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fantasy_calendar_data.json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }, 100);
+  }
+
+  function clearAllNotes() {
+    if (!confirm("Are you sure you want to delete ALL notes for ALL years?")) return;
+    const keysToDelete = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.startsWith("note-")) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => localStorage.removeItem(key));
+    buildCalendar();
+    alert("All notes cleared.");
+  }
+
+  function previewImport(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        importPreviewData = JSON.parse(e.target.result);
+        const preview = JSON.stringify(importPreviewData, null, 2).slice(0, 1000);
+         alert("Preview of imported data:\n" + preview + (importPreviewData.notes ? "\n..." : ""));
+        document.getElementById("confirmImportBtn").style.display = "inline-block";
+      } catch (err) {
+        alert("Invalid file format.");
+        importPreviewData = null;
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function confirmImport() {
+    if (!importPreviewData) return;
+    if (importPreviewData.currentYear) {
+      localStorage.setItem("currentYear", importPreviewData.currentYear);
+      currentYear = importPreviewData.currentYear;
+    }
+    for (const [key, value] of Object.entries(importPreviewData.notes || {})) {
+      localStorage.setItem(key, value);
+    }
+    buildCalendar();
+    importPreviewData = null;
+    document.getElementById("confirmImportBtn").style.display = "none";
+    alert("Import complete.");
+  }
+
+  function populateYearDropdown() {
+    const yearSelect = document.getElementById("yearSelect");
+    yearSelect.innerHTML = ""; // Clear existing options
+    for (let year = 1; year <= currentYear; year++) {
+      const option = document.createElement("option");
+      option.value = year;
+      option.textContent = `Year ${year}`;
+      if (year === currentYear) option.selected = true;
+      yearSelect.appendChild(option);
+    }
+  }
+
+  function populateDateDropdown() {
+    const dateSelect = document.getElementById("dateSelect");
+    dateSelect.innerHTML = ""; // Clear existing options
+    for (let dayIndex = 0; dayIndex < totalDays; dayIndex++) {
+      const seasonData = getSeasonData(dayIndex);
+      const option = document.createElement("option");
+      option.value = dayIndex;
+      option.textContent = `Day ${dayIndex + 1} (${seasonData.name}, Week ${seasonData.week})`;
+      dateSelect.appendChild(option);
+    }
+  }
+
+  function jumpToYear() {
+    const yearSelect = document.getElementById("yearSelect");
+    currentYear = parseInt(yearSelect.value);
+    localStorage.setItem("currentYear", currentYear);
+    buildCalendar();
+  }
+
+  function jumpToDate() {
+    const dateSelect = document.getElementById("dateSelect");
+    const dayIndex = parseInt(dateSelect.value);
+    const dayElement = document.querySelector(`.day[data-day-index="${dayIndex}"]`);
+    if (dayElement) {
+      document.querySelectorAll(".day").forEach(d => d.classList.remove("active"));
+      dayElement.classList.add("active");
+      dayElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function showNotePopup(dayIndex, notes) {
+    const popup = document.getElementById("notePopup");
+    const overlay = document.getElementById("overlay");
+    const popupContent = document.getElementById("notePopupContent");
+
+    // If no notes exist, add a new empty note and open it in edit mode
+    let isEditMode = false;
+    if (notes.length === 0) {
+      notes.push(""); // Add a new empty note
+      localStorage.setItem(`note-${currentYear}-${dayIndex}`, JSON.stringify(notes)); // Save updated notes
+      isEditMode = true; // Automatically enter edit mode
+    }
+
+    console.log("Notes before opening popup:", notes);
+    console.log("Is edit mode:", isEditMode);
+
+    let notesHtml = notes
+      .map(
+        (note, index) => `
+        <div class="note-entry" id="note-entry-${dayIndex}-${index}">
+          <div id="note-display-${dayIndex}-${index}" style="margin-bottom: 5px; ${isEditMode && index === notes.length - 1 ? 'display: none;' : ''}">
+            <p>${note}</p>
+            <button onclick="enterEditMode(${dayIndex}, ${index})" class="icon-btn" title="Edit">&#9998;</button>
+            <button onclick="deleteNote(${dayIndex}, ${index})" class="icon-btn" title="Delete">&#128465;</button>
+          </div>
+          <div id="note-edit-${dayIndex}-${index}" style="${isEditMode && index === notes.length - 1 ? 'display: block;' : 'display: none;'}">
+            <textarea id="note-textarea-${dayIndex}-${index}" style="width: 100%; height: 80px; box-sizing: border-box; background: #333; color: #e0e0e0; border: 1px solid #555;">${note}</textarea>
+            <button onclick="saveNote(${dayIndex}, ${index})" class="icon-btn" title="Save">&#128190;</button>
+            <button onclick="cancelEditMode(${dayIndex}, ${index})" class="icon-btn" title="Cancel">&#10060;</button>
+          </div>
+        </div>
+      `
+      )
+      .join("");
+
+    notesHtml += `
+      <button onclick="addNewNote(${dayIndex})" class="icon-btn" title="Add Note" style="margin-top: 10px;">&#43;</button>
+    `;
+
+    popupContent.innerHTML = `
+      <h3>Notes for Day ${dayIndex + 1}</h3>
+      ${notesHtml}
+    `;
+    popup.style.display = "block";
+    overlay.style.display = "block";
+  }
+
+  function enterEditMode(dayIndex, noteIndex) {
+    document.getElementById(`note-display-${dayIndex}-${noteIndex}`).style.display = "none";
+    document.getElementById(`note-edit-${dayIndex}-${noteIndex}`).style.display = "block";
+  }
+
+  function cancelEditMode(dayIndex, noteIndex) {
+    document.getElementById(`note-display-${dayIndex}-${noteIndex}`).style.display = "block";
+    document.getElementById(`note-edit-${dayIndex}-${noteIndex}`).style.display = "none";
+  }
+
+  function closeNotePopup() {
+    const popup = document.getElementById("notePopup");
+    const overlay = document.getElementById("overlay");
+
+    popup.style.display = "none";
+    overlay.style.display = "none";
+  }
+
+  function savePopupNote(dayIndex) {
+    const textarea = document.getElementById("popupNoteTextarea");
+    const noteContent = textarea.value.trim();
+    const key = `note-${currentYear}-${dayIndex}`;
+
+    if (noteContent) {
+      localStorage.setItem(key, noteContent); // Save the note to localStorage
+    } else {
+      localStorage.removeItem(key); // Remove the note if the content is empty
+    }
+
+    closeNotePopup(); // Close the popup after saving
+    buildCalendar(); // Rebuild the calendar to reflect changes
+  }
+
+  function deletePopupNote(dayIndex) {
+    const key = `note-${currentYear}-${dayIndex}`;
+    localStorage.removeItem(key); // Remove the note from localStorage
+
+    closeNotePopup(); // Close the popup after deleting
+    buildCalendar(); // Rebuild the calendar to reflect changes
+  }
+
+  function deleteNote(dayIndex, noteIndex) {
+    const key = `note-${currentYear}-${dayIndex}`;
+    const notes = JSON.parse(localStorage.getItem(key)) || [];
+
+    notes.splice(noteIndex, 1); // Remove the specific note
+    localStorage.setItem(key, JSON.stringify(notes)); // Save updated notes
+
+    showNotePopup(dayIndex, notes); // Refresh the popup
+    buildCalendar(); // Update the calendar
+  }
+
+  function addNewNote(dayIndex) {
+    const key = `note-${currentYear}-${dayIndex}`;
+    const notes = JSON.parse(localStorage.getItem(key)) || [];
+
+    console.log("Before adding new note:", notes);
+
+    // Add a new empty note
+    notes.push(""); 
+    localStorage.setItem(key, JSON.stringify(notes)); // Save updated notes to localStorage
+
+    console.log("After adding new note:", notes);
+
+    // Refresh the popup to show the new note in edit mode
+    showNotePopup(dayIndex, notes);
+  }
+
+  function previousSeason() {
+  if (currentSeasonIndex > 0) {
+    currentSeasonIndex--; // Move to the previous season
+  } else {
+    // If at the first season, decrement the year and go to the last season
+    if (currentYear > 1) {
+      currentSeasonIndex = seasons.length - 1; // Set to the last season
+      currentYear--; // Decrement the year
+      localStorage.setItem("currentYear", currentYear); // Save the updated year
+    } else {
+      alert("You are already at the first year and first season.");
+      return;
+    }
+  }
+  buildCalendar(); // Rebuild the calendar
+}
+
+  function nextSeason() {
+    if (currentSeasonIndex < seasons.length - 1) {
+      currentSeasonIndex++; // Move to the next season
+    } else {
+      // If at the last season, increment the year and go to the first season
+      currentSeasonIndex = 0; // Reset to the first season
+      currentYear++; // Increment the year
+      localStorage.setItem("currentYear", currentYear); // Save the updated year
+    }
+    buildCalendar(); // Rebuild the calendar
+  }
+
+  function loadCalendar() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json"; // Accept only JSON files
+  input.onchange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+
+        // Validate the imported data
+        if (!data.currentYear || !data.notes) {
+          alert("Invalid calendar file format.");
+          return;
+        }
+
+        // Load the data into localStorage
+        localStorage.setItem("currentYear", data.currentYear);
+        currentYear = data.currentYear;
+
+        for (const [key, value] of Object.entries(data.notes)) {
+          localStorage.setItem(key, value);
+        }
+
+        alert("Calendar loaded successfully!");
+        buildCalendar(); // Rebuild the calendar with the loaded data
+        populateYearDropdown(); // Update the year dropdown
+        populateDateDropdown(); // Update the date dropdown
+      } catch (error) {
+        alert("Failed to load calendar. Please ensure the file is valid.");
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
+  input.click(); // Trigger the file input dialog
+}
+
+  buildCalendar();
+  populateYearDropdown();
+  populateDateDropdown();
+</script>
+
+<script>
+  function closeNotePopup(dayIndex) {
+    const popup = document.getElementById("notePopup");
+    const overlay = document.getElementById("overlay");
+
+    // Check if the note for the day is empty and remove it
+    const key = `note-${currentYear}-${dayIndex}`;
+    const notes = JSON.parse(localStorage.getItem(key)) || [];
+    const filteredNotes = notes.filter(note => note.trim().length >= 1); // Remove empty or null notes
+
+    if (filteredNotes.length === 0) {
+      localStorage.removeItem(key); // Remove the key if no valid notes exist
+    } else {
+      localStorage.setItem(key, JSON.stringify(filteredNotes)); // Save only valid notes
+    }
+
+    popup.style.display = "none";
+    overlay.style.display = "none";
+
+    buildCalendar(); // Rebuild the calendar to reflect changes
+  }
+</script>
+
+</body>
+</html>
